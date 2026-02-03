@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d04b185dc70f22cc2e9e7571506e5273e8a49e30a00c2bfe84f89ffd408f6f33"
+content_hash = "sha256:5694ff26a16db04b06bd900b1643dc333646baed63fdc8611dfd42f2319e9bb6"
 
 [[metadata.targets]]
 requires_python = "==3.10.*"
@@ -3244,7 +3244,7 @@ files = [
 name = "torch"
 version = "2.2.2"
 requires_python = ">=3.8.0"
-path = "./torch-2.2.2-cp310-none-macosx_10_9_x86_64.whl"
+url = "file:///Users/songshuang/Desktop/medgemma-contest/torch-2.2.2-cp310-none-macosx_10_9_x86_64.whl"
 summary = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 groups = ["default"]
 dependencies = [
