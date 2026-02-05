@@ -1,5 +1,8 @@
 import os
 from huggingface_hub import snapshot_download, login
+from dotenv import load_dotenv 
+
+load_dotenv()
 
 def download_medgemma():
     repo_id = "google/medgemma-1.5-4b-it"
@@ -8,6 +11,7 @@ def download_medgemma():
     
     print(f"Target Model: {repo_id}")
     print(f"Download Directory: {local_dir}")
+    load_dotenv()
     hf_token = os.getenv("HF_TOKEN")
     login(token=hf_token)
     
@@ -21,7 +25,6 @@ def download_medgemma():
             resume_download=True
         )
         
-        print("-" * 50)
         print("Download Complete")
         print(f"Model weights are stored in: {path}")
         
