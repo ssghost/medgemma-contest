@@ -173,7 +173,7 @@ def get_next_session_id():
         
     return f"patient_session_{next_num:03d}"
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = build_graph()
     
     thread_id = get_next_session_id()

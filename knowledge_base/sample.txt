@@ -1,4 +1,0 @@
-MedGemma is a family of open weights models built on Gemma. 
-It is designed for medical research and applications.
-The models are fine-tuned on medical datasets to provide accurate and relevant information.
-MedGemma can be used to build human-centered AI applications for healthcare.
