@@ -1,0 +1,1 @@
+./build/bin/llama-server -m ~/Desktop/medgemma-contest/models/medgemma-1.5-4b-it-q4_k_m.gguf -ngl 99 -c 2048 -b 32 --host 0.0.0.0 --port 8111 --chat-template gemma
