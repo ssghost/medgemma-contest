@@ -14,13 +14,18 @@ embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 vector_store = Chroma(persist_directory=DB_PATH, embedding_function=embeddings)
 
 def retrieve_knowledge(query: str, severity: str) -> str:
-    target_source = "US_Army_First_Aid" if severity == "CRITICAL" else "MSF_Clinical_Guidelines"
+    if severity == "CRITICAL":
+        target_source = "pdf/US_Army_First_Aid.pdf"
+    else:
+        target_source = "pdf/MSF_Clinical_Guidelines.pdf"
+        
     try:
         results = vector_store.similarity_search(
             query, 
             k=3,
-            filter={"source": {"$contains": target_source}}
+            filter={"source": target_source}
         )
+        print(f"[Debug] Found {len(results)} relevant chunks from {target_source}")
 
         all_text = "\n".join([d.page_content for d in results])
         lines = [line.strip() for line in all_text.split('\n') if line.strip()]
@@ -58,7 +63,8 @@ try:
         max_tokens=256,
         streaming=True,
         frequency_penalty=1.5,
-        presence_penalty=1.0
+        presence_penalty=1.0,
+        stop=["thought", "Reasoning", "Checklist", "**Identify"]
     )
     print("LLM Clients initialized.")
 except Exception as e:
@@ -71,7 +77,7 @@ class AgentState(TypedDict):
 def triage_node(state: AgentState):
     last_message = state["messages"][-1]
     user_text = last_message.content
-    print(f"\n[Triage] Analyzing severity for: '{user_text}'")
+    print(f"[System] Triage Analyzing...")
     
     prompt = f"""
     You are a highly cautious emergency triage nurse. Analyze the input.
@@ -115,9 +121,6 @@ def triage_node(state: AgentState):
         return {"severity": "NORMAL"} 
 
 def critical_response_node(state: AgentState):
-    print(f"[Critical] Generating Emergency Protocol...")
-    print(f"--- Stream Output: ---\n")
-
     last_message = state["messages"][-1]
     context = retrieve_knowledge(last_message.content, "CRITICAL")
     
@@ -133,27 +136,13 @@ def critical_response_node(state: AgentState):
     
     messages = [system_prompt] + state["messages"]
     
-    full_response = ""
     try:
-        for chunk in responder_llm.stream(messages):
-            content = chunk.content
-            if content:
-                print(content, end="", flush=True)
-                full_response += content
+        response = responder_llm.invoke(messages)
+        return {"messages": [response]}
     except Exception as e:
-        print(f"(Stream Error: {e})")
-
-    if not full_response.strip():
-        fallback = "Critical Error: Please call Emergency Services immediately."
-        print(fallback)
-        full_response = fallback
-            
-    return {"messages": [AIMessage(content=full_response)]}
+        return {"messages": [AIMessage(content="Error: Medical guidelines unavailable.")]}
 
 def normal_response_node(state: AgentState):
-    print(f"[Normal] Generating Medical Advice...")
-    print(f"--- Stream Output: ---\n")
-    
     last_message = state["messages"][-1]
     context = retrieve_knowledge(last_message.content, "NORMAL")
     
@@ -168,22 +157,11 @@ def normal_response_node(state: AgentState):
     """)
     messages = [system_prompt] + state["messages"]
 
-    full_response = ""
     try:
-        for chunk in responder_llm.stream(messages):
-            content = chunk.content
-            if content:
-                print(content, end="", flush=True)
-                full_response += content
+        response = responder_llm.invoke(messages)
+        return {"messages": [response]}
     except Exception as e:
-        print(f"(Stream Error: {e})")
-
-    if not full_response.strip():
-        fallback = "I apologize, I couldn't generate a response. Please consult a doctor."
-        print(fallback)
-        full_response = fallback
-            
-    return {"messages": [AIMessage(content=full_response)]}
+        return {"messages": [AIMessage(content="Error: Guidance unavailable.")]}
 
 def router_logic(state: AgentState) -> Literal["critical", "normal"]:
     if state["severity"] == "CRITICAL":
@@ -227,7 +205,7 @@ def get_next_session_id():
     else:
         current_num = 0 
         
-    next_num = current_num + 1
+    next_num = (current_num % 999) + 1
     
     with open(counter_file, "w") as f:
         f.write(str(next_num))
@@ -235,31 +213,21 @@ def get_next_session_id():
     return f"patient_session_{next_num:03d}"
 
 if __name__ == '__main__':
-    app = build_graph()
+    agent = build_graph()
     
     thread_id = get_next_session_id()
     config = {"configurable": {"thread_id": thread_id}}
     
     print(f"\nMedGemma Agent Started (Session: {thread_id})")
-    print("Type 'exit' or 'quit' to stop.")
-    print("=" * 50)
-    
-    print(f"\nStarting Triage Agent...")
-    print("=" * 50)
     
     while True:
         try:
             user_input = input("\nYou: ")
-            if user_input.lower() in ["exit", "quit"]:
-                print("Bye!")
-                break
+            if user_input.lower() in ["exit", "quit"]: break
             
             input_message = HumanMessage(content=user_input)
-            app.invoke({"messages": [input_message]}, config=config)
+            output = agent.invoke({"messages": [input_message]}, config=config)
+            print(f"\nAssistant: {output['messages'][-1].content}")
             
-            print("\n" + "-" * 50)
-            
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            print(f"Error: {e}")
+        except KeyboardInterrupt: break
+        except Exception as e: print(f"Error: {e}")

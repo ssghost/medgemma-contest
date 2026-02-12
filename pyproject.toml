@@ -24,7 +24,7 @@ dependencies = [
     "langchain-openai>=0.2.0",
     "langchain-chroma>=0.1.2",
     "langchain-huggingface>=0.1.0",
-    "langgraph>=0.2.0",
+    "langgraph>=1.0.8",
     "chromadb>=0.5.0",
     "sentence-transformers>=3.0.0",
     "kaggle",
@@ -34,7 +34,8 @@ dependencies = [
     "sentencepiece",
     "gguf",
     "protobuf",
-    "pypdf"
+    "pypdf",
+    "streamlit>=1.54.0"
 ]
 
 requires-python = "==3.10.*"
