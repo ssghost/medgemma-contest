@@ -6,6 +6,36 @@ from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage, AIMessage
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+
+DB_PATH = "./database"
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vector_store = Chroma(persist_directory=DB_PATH, embedding_function=embeddings)
+
+def retrieve_knowledge(query: str, severity: str) -> str:
+    target_source = "US_Army_First_Aid" if severity == "CRITICAL" else "MSF_Clinical_Guidelines"
+    try:
+        results = vector_store.similarity_search(
+            query, 
+            k=3,
+            filter={"source": {"$contains": target_source}}
+        )
+
+        all_text = "\n".join([d.page_content for d in results])
+        lines = [line.strip() for line in all_text.split('\n') if line.strip()]
+        unique_lines = []
+        seen = set()
+        for line in lines:
+            if line not in seen:
+                unique_lines.append(line)
+                seen.add(line)
+        
+        cleaned_context = "\n".join(unique_lines[:15]) 
+        return cleaned_context
+    
+    except Exception as e:
+        return f"(Error retrieving context: {e})"
 
 PORT = 8111
 print(f"\nConnecting to MedGemma Triage Agent (Port {PORT})...")
@@ -15,7 +45,7 @@ try:
         base_url=f"http://localhost:{PORT}/v1",
         api_key="sk-no-key-required",
         model="medgemma",
-        temperature=0.0, 
+        temperature=0.1, 
         max_tokens=10,  
         streaming=False 
     )
@@ -24,9 +54,11 @@ try:
         base_url=f"http://localhost:{PORT}/v1",
         api_key="sk-no-key-required",
         model="medgemma",
-        temperature=0.2,
-        max_tokens=512,
-        streaming=True 
+        temperature=0.1,
+        max_tokens=256,
+        streaming=True,
+        frequency_penalty=1.5,
+        presence_penalty=1.0
     )
     print("LLM Clients initialized.")
 except Exception as e:
@@ -42,10 +74,15 @@ def triage_node(state: AgentState):
     print(f"\n[Triage] Analyzing severity for: '{user_text}'")
     
     prompt = f"""
-    You are an emergency triage nurse. Analyze the input.
-    - If the symptom implies immediate life threat (heart attack, stroke, heavy bleeding, inability to breathe), output only: CRITICAL
-    - Otherwise (cold, headache, diabetes info), output only: NORMAL
-    - If the user is asking a question (e.g., "Is this bad?", "Could it be flu?"), output: NORMAL
+    You are a highly cautious emergency triage nurse. Analyze the input.
+    CRITERIA for CRITICAL:
+    - Immediate life threat: heart attack, stroke, inability to breathe.
+    - Severe bleeding: Any mention of "spurting", "pulsing", "bright red blood", or "cannot stop bleeding".
+    - Major trauma: Open fractures, head injuries with loss of consciousness.
+
+    CRITERIA for NORMAL:
+    - Mild symptoms: cold, slight headache, stable chronic conditions.
+    - Questions: General medical inquiries where no acute distress is present.
 
     Examples:
     User: "I have a headache and runny nose." -> Output: NORMAL
@@ -53,6 +90,7 @@ def triage_node(state: AgentState):
     User: "I cut my finger, it stopped bleeding." -> Output: NORMAL
     User: "I am choking and cannot breathe." -> Output: CRITICAL
     User: "Could it be the flu?" -> Output: NORMAL
+    User: "I have a deep gash and it's spurting bright red blood." -> Output: CRITICAL
     
     Input: {user_text}
     Output:"""
@@ -79,8 +117,20 @@ def triage_node(state: AgentState):
 def critical_response_node(state: AgentState):
     print(f"[Critical] Generating Emergency Protocol...")
     print(f"--- Stream Output: ---\n")
+
+    last_message = state["messages"][-1]
+    context = retrieve_knowledge(last_message.content, "CRITICAL")
     
-    system_prompt = SystemMessage(content="You are an Emergency Response System. The user is in danger. Output ONLY immediate action steps. Do NOT explain. Do NOT say what you are thinking. BUT: If the user is just asking a question (e.g., Is it flu?), answer it normally and calmly. Do NOT repeat yourself.")
+    system_prompt = SystemMessage(content=f"""
+    You are an Emergency Response System. Use the provided US ARMY FIRST AID GUIDELINES to answer.
+    Output ONLY immediate action steps. Do NOT explain. Do NOT say what you are thinking. DO NOT output thought, reasoning, or any meta-commentary.
+    Limit your response to the most vital 5-8 steps. If two steps are similar, merge them into one. If it leads to looping, STOP output immediately.
+    STOP generating immediately after the last medical step. DO NOT evaluate your own performance or explain constraints.
+
+    === GUIDELINES ===
+    {context}
+    """)
+    
     messages = [system_prompt] + state["messages"]
     
     full_response = ""
@@ -104,9 +154,20 @@ def normal_response_node(state: AgentState):
     print(f"[Normal] Generating Medical Advice...")
     print(f"--- Stream Output: ---\n")
     
-    system_prompt = SystemMessage(content="You are a helpful medical assistant. Answer concisely. Do NOT output any internal thoughts, thought tags, or reasoning steps.")
-    messages = [system_prompt] + state["messages"]
+    last_message = state["messages"][-1]
+    context = retrieve_knowledge(last_message.content, "NORMAL")
     
+    system_prompt = SystemMessage(content=f"""
+    You are a helpful medical assistant. Answer based on the MSF CLINICAL GUIDELINES provided below.
+    Answer concisely. Do NOT output any internal thoughts or reasoning steps. DO NOT output thought, reasoning, or any meta-commentary.
+    Limit your response to the most vital 5-8 steps. If two steps are similar, merge them into one. If it leads to looping, STOP output immediately. 
+    STOP generating immediately after the last medical step. DO NOT evaluate your own performance or explain constraints.                          
+
+    === GUIDELINES ===
+    {context}
+    """)
+    messages = [system_prompt] + state["messages"]
+
     full_response = ""
     try:
         for chunk in responder_llm.stream(messages):
