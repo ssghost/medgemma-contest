@@ -11,6 +11,9 @@ if root_dir not in sys.path:
 
 from src.agent.graph import build_graph, get_next_session_id
 
+USER_AVATAR_PATH = "assets/face.svg"
+ASSISTANT_AVATAR_PATH = "assets/robot.svg"
+
 def app() -> None:
     st.set_page_config(
         page_title="MedGemma Local Triage",
@@ -48,10 +51,10 @@ def app() -> None:
 
     if user_input := st.chat_input("Describe your symptoms or medical emergency..."):
         st.session_state.messages.append({"role": "user", "content": user_input})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar=USER_AVATAR_PATH):
             st.markdown(user_input)
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=ASSISTANT_AVATAR_PATH):
             with st.status("🩺 Analyzing symptoms and retrieving guidelines...", expanded=True) as status:
                 config = {"configurable": {"thread_id": st.session_state.session_id}}
                 input_data = {"messages": [HumanMessage(content=user_input)]}
