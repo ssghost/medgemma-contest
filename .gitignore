@@ -216,3 +216,5 @@ pdf/
 *.pdf
 
 database/
+
+.DS_Store
