@@ -55,10 +55,15 @@ def app() -> None:
             with st.status("🩺 Analyzing symptoms and retrieving guidelines...", expanded=True) as status:
                 config = {"configurable": {"thread_id": st.session_state.session_id}}
                 input_data = {"messages": [HumanMessage(content=user_input)]}
+                
                 result = st.session_state.agent.invoke(input_data, config=config)
                 
                 severity = result.get("severity", "NORMAL")
-                final_answer = result["messages"][-1].content
+                raw_answer = result["messages"][-1].content
+                if "1." in raw_answer:
+                    final_answer = "1." + raw_answer.split("1.", 1)[1]
+                else:
+                    final_answer = raw_answer
                 
                 icon = "🚨" if severity == "CRITICAL" else "🩺"
                 status.update(label=f"{icon} Triage Complete: {severity} Level", state="complete")

@@ -64,7 +64,7 @@ try:
         streaming=True,
         frequency_penalty=1.5,
         presence_penalty=1.0,
-        stop=["thought", "Reasoning", "Checklist", "**Identify"]
+        stop=["<|endoftext|>", "## Instruction"]
     )
     print("LLM Clients initialized.")
 except Exception as e:
