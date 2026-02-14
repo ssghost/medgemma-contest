@@ -79,7 +79,6 @@ The repository is organized into a modular structure to ensure technical review 
 
 ```
 ├── assets/           # Professional medical iconography
-├── example/          # Documented clinical triage benchmarks
 ├── src/
 │   ├── agent/        # LangGraph nodes and clinical edge logic
 │   ├── rag/          # ChromaDB RAG and guideline indexing
