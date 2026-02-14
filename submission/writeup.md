@@ -4,7 +4,7 @@
 **MedGemma Local Triage**
 
 ### Your team
-**Edmond Song** – Lead AI Engineer & System Architect
+**Edmond Song** (Kaggle profile name: **Stardust Kei**) – Lead AI Engineer & System Architect
 *Responsible for agentic workflow design, model quantization, and local RAG implementation.*
 
 ### Problem statement
