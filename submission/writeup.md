@@ -16,7 +16,7 @@
 # **MedGemma Local Triage: Secure Edge AI for Offline Clinical Support**
 
 **Project:** MedGemma Local Triage  
-**Participant:** **Edmond Song** (Kaggle: Stardust Kei) 
+**Participant:** **Edmond Song** (Kaggle: **Stardust Kei**) 
 
 Lead AI Engineer & System Architect  
 *Responsible for agentic workflow design, model quantization, and local RAG implementation.*
