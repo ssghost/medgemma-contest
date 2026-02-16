@@ -80,25 +80,35 @@ def triage_node(state: AgentState):
     print(f"[System] Triage Analyzing...")
     
     prompt = f"""
-    You are a highly cautious emergency triage nurse. Analyze the input.
-    CRITERIA for CRITICAL:
-    - Immediate life threat: heart attack, stroke, inability to breathe.
-    - Severe bleeding: Any mention of "spurting", "pulsing", "bright red blood", or "cannot stop bleeding".
-    - Major trauma: Open fractures, head injuries with loss of consciousness.
-
-    CRITERIA for NORMAL:
-    - Mild symptoms: cold, slight headache, stable chronic conditions.
-    - Questions: General medical inquiries where no acute distress is present.
-
-    Examples:
-    User: "I have a headache and runny nose." -> Output: NORMAL
-    User: "My chest feels heavy and left arm hurts." -> Output: CRITICAL
-    User: "I cut my finger, it stopped bleeding." -> Output: NORMAL
-    User: "I am choking and cannot breathe." -> Output: CRITICAL
-    User: "Could it be the flu?" -> Output: NORMAL
-    User: "I have a deep gash and it's spurting bright red blood." -> Output: CRITICAL
+    You are a highly cautious emergency triage specialist. 
+    Your task is to RE-EVALUATE the triage level based on the LATEST update from the user. 
     
-    Input: {user_text}
+    IMPORTANT: Medical conditions are dynamic. You must focus on the CURRENT symptoms described in the most recent message while considering the history. If the situation has deteriorated, you MUST upgrade the triage level immediately.
+
+    [CRITICAL] Criteria:
+    - SUDDEN DETERIORATION: Any worsening of symptoms (e.g., "now bleeding more", "getting dizzy").
+    - MECHANISM OF INJURY: Blast injuries, explosions, shrapnel wounds, gunshots.
+    - SIGNS OF SHOCK: "Weak pulse", "shallow breathing", "cold skin", "pale", "unconscious".
+    - SEVERE PAIN: "Severe abdominal pain", "crushing chest pain".
+    - UNSTABLE BLEEDING: "Spurting", "pulsing", or bleeding that won't stop.
+
+    [NORMAL] Criteria:
+    - Minor illness: Cold, flu, mild headache, stable chronic conditions.
+    - Stable wounds: Slow bleeding that is controlled, mild cuts without systemic symptoms.
+    - No acute injury: General medical questions.
+
+    [Dynamic Examples for Multi-turn Logic]:
+    Example 1 (Escalation):
+    Context: Patient had a minor cut (NORMAL).
+    Latest Input: "The same wound is now spurting blood and I feel dizzy."
+    Output: CRITICAL
+
+    Example 2 (Stable):
+    Context: Patient has a cold (NORMAL).
+    Latest Input: "I also have a slight runny nose today."
+    Output: NORMAL
+    
+    Current Latest Input: {user_text}
     Output:"""
     
     messages = [HumanMessage(content=prompt)]
@@ -130,6 +140,8 @@ def critical_response_node(state: AgentState):
     Limit your response to the most vital 5-8 steps. If two steps are similar, merge them into one. If it leads to looping, STOP output immediately.
     STOP generating immediately after the last medical step. DO NOT evaluate your own performance or explain constraints.
 
+    IMPORTANT: You must start your final answer exactly with the prefix '[FINAL_ADVICE]'. Do not output any thought or reasoning before this prefix.                         
+
     === GUIDELINES ===
     {context}
     """)
@@ -150,7 +162,9 @@ def normal_response_node(state: AgentState):
     You are a helpful medical assistant. Answer based on the MSF CLINICAL GUIDELINES provided below.
     Answer concisely. Do NOT output any internal thoughts or reasoning steps. DO NOT output thought, reasoning, or any meta-commentary.
     Limit your response to the most vital 5-8 steps. If two steps are similar, merge them into one. If it leads to looping, STOP output immediately. 
-    STOP generating immediately after the last medical step. DO NOT evaluate your own performance or explain constraints.                          
+    STOP generating immediately after the last medical step. DO NOT evaluate your own performance or explain constraints. 
+
+    IMPORTANT: You must start your final answer exactly with the prefix '[FINAL_ADVICE]'. Do not output any thought or reasoning before this prefix.                         
 
     === GUIDELINES ===
     {context}

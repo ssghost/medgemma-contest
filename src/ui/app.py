@@ -64,10 +64,18 @@ def app() -> None:
                 
                 severity = result.get("severity", "NORMAL")
                 raw_answer = result["messages"][-1].content
-                if "1." in raw_answer:
-                    final_answer = "1." + raw_answer.split("1.", 1)[1]
+
+                if "[FINAL_ADVICE]" in raw_answer:
+                    final_answer = raw_answer.split("[FINAL_ADVICE]")[-1].strip()
+                elif "1." in raw_answer:
+                    last_index = raw_answer.rfind("1.")
+                    final_answer = raw_answer[last_index:].strip()
                 else:
-                    final_answer = raw_answer
+                    final_answer = raw_answer.strip()
+
+                for noise in ["Final check:", "Output:", "Based on guidelines:"]:
+                    if noise in final_answer:
+                        final_answer = final_answer.split(noise)[-1].strip()
                 
                 icon = "🚨" if severity == "CRITICAL" else "🩺"
                 status.update(label=f"{icon} Triage Complete: {severity} Level", state="complete")
