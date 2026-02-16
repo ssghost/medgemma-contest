@@ -50,7 +50,7 @@ try:
         base_url=f"http://localhost:{PORT}/v1",
         api_key="sk-no-key-required",
         model="medgemma",
-        temperature=0.1, 
+        temperature=0.0, 
         max_tokens=10,  
         streaming=False 
     )
