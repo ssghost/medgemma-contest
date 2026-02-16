@@ -50,7 +50,11 @@ def app() -> None:
             st.markdown(message["content"])
 
     if user_input := st.chat_input("Describe your symptoms or medical emergency..."):
-        st.session_state.messages.append({"role": "user", "content": user_input})
+        for message in st.session_state.messages:
+            avatar_path = USER_AVATAR_PATH if message["role"] == "user" else ASSISTANT_AVATAR_PATH
+            with st.chat_message(message["role"], avatar=avatar_path):
+                st.markdown(message["content"])
+                
         with st.chat_message("user", avatar=USER_AVATAR_PATH):
             st.markdown(user_input)
 
