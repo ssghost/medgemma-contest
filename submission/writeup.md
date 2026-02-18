@@ -63,4 +63,4 @@ MedGemma Local Triage is not just a benchmark experiment; it is a technically fe
 
 ### **Project Resources**
 * **GitHub Repository**: [https://github.com/ssghost/medgemma-contest](https://github.com/ssghost/medgemma-contest)
-* **Demo Video**: [https://vimeo.com/1165916027](https://vimeo.com/1165916027)
+* **Demo Video**: [https://youtu.be/qLvqyrdQ09U](https://youtu.be/qLvqyrdQ09U)
