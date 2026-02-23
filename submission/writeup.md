@@ -65,3 +65,4 @@ MedGemma Local Triage is not just a benchmark experiment; it is a technically fe
 * **GitHub Repository**: [https://github.com/ssghost/medgemma-contest](https://github.com/ssghost/medgemma-contest)
 * **Demo Video**: [https://youtu.be/qLvqyrdQ09U](https://youtu.be/qLvqyrdQ09U)
 * **Optimized Model**: [https://huggingface.co/SDCKei/MedGemma-1.5-GGUF-Q4KM-MacOptimized](https://huggingface.co/SDCKei/MedGemma-1.5-GGUF-Q4KM-MacOptimized)
+* **Document Source**: [https://medicalguidelines.msf.org/sites/default/files/2025-07/guideline-170-en.pdf](https://medicalguidelines.msf.org/sites/default/files/2025-07/guideline-170-en.pdf), [https://commons.wikimedia.org/wiki/File:FM_4-25.11_(FM_21-11)_First_Aid_December_2002.pdf](https://commons.wikimedia.org/wiki/File:FM_4-25.11_(FM_21-11)_First_Aid_December_2002.pdf)
